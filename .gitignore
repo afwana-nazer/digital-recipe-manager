@@ -1,0 +1,26 @@
+# Django and Python ignores
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Database
+db.sqlite3
+
+# Media and Static files (optional depending on use case, but usually media should be ignored)
+media/
+
+# Environment variables
+.env
+
+# Editor directories and files
+.idea/
+.vscode/
+*.swp
+*.swo

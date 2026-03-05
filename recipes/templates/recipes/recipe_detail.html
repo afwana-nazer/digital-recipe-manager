@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="bg-gray-50 dark:bg-gray-900 min-h-screen pb-12">
+    <!-- Header Image -->
+    <div class="w-full h-64 md:h-96 relative bg-gray-200 dark:bg-gray-800">
+        {% if recipe.image %}
+        <img src="{{ recipe.image.url }}" alt="{{ recipe.title }}" class="w-full h-full object-cover">
+        {% else %}
+        <div class="w-full h-full flex items-center justify-center">
+            <i class="fa-solid fa-image text-gray-400 text-6xl"></i>
+        </div>
+        {% endif %}
+        <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+        <div class="absolute bottom-0 left-0 w-full p-6 md:p-12">
+            <div class="max-w-5xl mx-auto flex items-end justify-between">
+                <div>
+                    {% if recipe.category %}
+                    <span
+                        class="inline-block bg-brand-cinnabar text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-3">
+                        {{ recipe.category.name }}
+                    </span>
+                    {% endif %}
+                    <h1 class="text-3xl md:text-5xl font-bold text-white mb-2">{{ recipe.title }}</h1>
+                    <p class="text-gray-200 text-lg flex items-center gap-4">
+                        <span><i class="fa-solid fa-user-circle mr-1"></i> {{ recipe.author.username }}</span>
+                        <span><i class="fa-regular fa-calendar mr-1"></i> {{ recipe.created_at|date:"M d, Y" }}</span>
+                    </p>
+                </div>
+
+                <div class="flex gap-3">
+                    <form action="{% url 'recipes:toggle_favorite' recipe.pk %}" method="POST" class="inline">
+                        {% csrf_token %}
+                        <button type="submit"
+                            class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-3 rounded-full transition-colors"
+                            title="Toggle Favorite">
+                            {% if user in recipe.favorites.all %}
+                            <i class="fa-solid fa-heart text-red-500 text-xl"></i>
+                            {% else %}
+                            <i class="fa-regular fa-heart text-xl"></i>
+                            {% endif %}
+                        </button>
+                    </form>
+                    <button onclick="window.print()"
+                        class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-3 rounded-full transition-colors hidden md:block"
+                        title="Print to PDF">
+                        <i class="fa-solid fa-print text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
+        <div
+            class="bg-white dark:bg-brand-charcoal rounded-xl shadow-xl overflow-hidden glassmorphism border border-gray-100 dark:border-gray-700">
+
+            {% if user == recipe.author %}
+            <div
+                class="bg-blue-50 dark:bg-blue-900/30 px-6 py-3 flex justify-end gap-3 border-b border-blue-100 dark:border-blue-800">
+                <a href="{% url 'recipes:recipe_update' recipe.pk %}"
+                    class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium text-sm">
+                    <i class="fa-solid fa-pen mr-1"></i> Edit
+                </a>
+                <a href="{% url 'recipes:recipe_delete' recipe.pk %}"
+                    class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium text-sm">
+                    <i class="fa-solid fa-trash mr-1"></i> Delete
+                </a>
+            </div>
+            {% endif %}
+
+            <div class="p-6 md:p-10 flex flex-col md:flex-row gap-12">
+                <!-- Sidebar: Details & Ingredients -->
+                <div class="w-full md:w-1/3 flex flex-col gap-8">
+
+                    <!-- Quick Stats -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div
+                            class="bg-brand-cream/50 dark:bg-gray-800 p-4 rounded-lg text-center border border-amber-100 dark:border-gray-700">
+                            <i class="fa-regular fa-clock text-brand-cinnabar text-2xl mb-2"></i>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Cook Time</div>
+                            <div class="font-bold text-gray-900 dark:text-white">{{ recipe.cook_time }} mins</div>
+                        </div>
+                        <div
+                            class="bg-brand-cream/50 dark:bg-gray-800 p-4 rounded-lg text-center border border-amber-100 dark:border-gray-700">
+                            <i class="fa-solid fa-heart text-brand-cinnabar text-2xl mb-2"></i>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Favorites</div>
+                            <div class="font-bold text-gray-900 dark:text-white">{{ recipe.favorites.count }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-circle-info text-brand-cinnabar hidden md:inline"></i> About
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-300 whitespace-pre-line leading-relaxed">{{
+                            recipe.description }}</p>
+                    </div>
+
+                    <!-- Ingredients -->
+                    <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl border border-gray-100 dark:border-gray-700">
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-basket-shopping text-brand-cinnabar"></i> Ingredients
+                        </h3>
+                        <div
+                            class="text-gray-700 dark:text-gray-300 font-medium whitespace-pre-line leading-relaxed text-sm md:text-base">
+                            {{ recipe.ingredients|linebreaksbr }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Content: Instructions -->
+                <div class="w-full md:w-2/3">
+                    <h2
+                        class="text-2xl font-bold text-gray-900 dark:text-white mb-6 border-b pb-2 dark:border-gray-700 flex items-center gap-2">
+                        <i class="fa-solid fa-list-ul text-brand-cinnabar"></i> Instructions
+                    </h2>
+                    <div
+                        class="prose dark:prose-invert max-w-none text-gray-700 dark:text-gray-300 whitespace-pre-line leading-loose text-lg">
+                        {{ recipe.instructions }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Print Styles */
+    @media print {
+
+        nav,
+        footer,
+        .print\:-hidden,
+        form {
+            display: none !important;
+        }
+
+        .glassmorphism {
+            background: white !important;
+            border: none !important;
+            box-shadow: none !important;
+            filter: none !important;
+        }
+
+        body {
+            background: white !important;
+            color: black !important;
+        }
+
+        .dark {
+            background: white !important;
+            color: black !important;
+        }
+
+        * {
+            color: black !important;
+            text-shadow: none !important;
+        }
+
+        .bg-gradient-to-t {
+            display: none !important;
+        }
+
+        img {
+            max-height: 400px;
+            object-fit: cover;
+        }
+    }
+</style>
+{% endblock %}

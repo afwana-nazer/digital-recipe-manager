@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Digital Recipe Manager{% endblock %}</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            cinnabar: '#E34234',
+                            cream: '#FFFDD0',
+                            charcoal: '#333333',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome / Lucide equivalents (via FontAwesome CDN) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .glassmorphism {
+            background: rgba(255, 253, 208, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .dark .glassmorphism {
+            background: rgba(51, 51, 51, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .recipe-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .recipe-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(227, 66, 52, 0.4);
+        }
+    </style>
+</head>
+
+<body
+    class="bg-brand-cream text-brand-charcoal dark:bg-gray-900 dark:text-gray-100 min-h-screen flex flex-col font-sans transition-colors duration-300">
+    <!-- Navbar -->
+    <nav class="bg-white dark:bg-brand-charcoal shadow-md sticky top-0 z-50 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+
+                <!-- Left: Logo & Navigation -->
+                <div class="flex items-center gap-8">
+                    <!-- Logo -->
+                    <a href="{% url 'recipes:recipe_list' %}"
+                        class="flex items-center gap-2 text-2xl font-bold text-brand-cinnabar shrink-0">
+                        <i class="fa-solid fa-utensils"></i> RecipeHub
+                    </a>
+
+                    <!-- Desktop Menu -->
+                    <div class="hidden md:flex items-stretch h-16 gap-6">
+                        <a href="{% url 'recipes:recipe_list' %}"
+                            class="flex items-center text-sm font-bold uppercase tracking-wider text-brand-charcoal dark:text-gray-200 hover:text-brand-cinnabar dark:hover:text-brand-cinnabar transition-colors">
+                            Home
+                        </a>
+
+                        <!-- Recipe Index Dropdown -->
+                        <div class="group relative flex items-stretch">
+                            <button
+                                class="flex items-center text-sm font-bold uppercase tracking-wider text-brand-cinnabar hover:text-red-700 transition-colors focus:outline-none h-full">
+                                Recipe Index <i class="fa-solid fa-chevron-down text-[10px] ml-2"></i>
+                            </button>
+
+                            <!-- Dropdown Menu -->
+                            <div
+                                class="absolute top-[64px] left-0 w-64 bg-[#fcfcfc] dark:bg-gray-800 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 border border-gray-100 dark:border-gray-700">
+                                <ul class="py-2">
+                                    {% for category in default_categories %}
+                                    <li class="border-b border-gray-100 dark:border-gray-700 last:border-0 relative">
+                                        <a href="{% url 'recipes:recipe_list' %}?category={{ category.name|urlencode }}"
+                                            class="block px-6 py-4 text-[13px] font-bold uppercase tracking-[0.1em] text-brand-charcoal dark:text-gray-200 hover:bg-white dark:hover:bg-gray-700 hover:text-brand-cinnabar dark:hover:text-brand-cinnabar transition-colors">
+                                            {{ category.name }}
+                                        </a>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 sm:gap-4">
+                    <button id="theme-toggle"
+                        class="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none transition-colors">
+                        <i id="theme-toggle-dark-icon" class="hidden fa-solid fa-moon"></i>
+                        <i id="theme-toggle-light-icon" class="hidden fa-solid fa-sun"></i>
+                    </button>
+
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'recipes:recipe_create' %}"
+                        class="hidden md:inline-block bg-brand-cinnabar text-white px-4 py-2 rounded-md font-medium hover:bg-red-600 transition-colors">
+                        <i class="fa-solid fa-plus mr-1"></i> Add Recipe
+                    </a>
+                    <div class="relative ml-2 group hidden md:block">
+                        <button
+                            class="flex text-sm border-2 border-transparent rounded-full focus:outline-none focus:border-brand-cinnabar transition">
+                            <span class="sr-only">Open user menu</span>
+                            <div
+                                class="h-8 w-8 rounded-full bg-brand-cinnabar text-white flex items-center justify-center font-bold">
+                                {{ user.username|make_list|first|upper }}
+                            </div>
+                        </button>
+                        <div
+                            class="hidden group-hover:block absolute right-0 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none">
+                            <a href="{% url 'recipes:dashboard' %}"
+                                class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Dashboard</a>
+                            <form method="post" action="{% url 'logout' %}">
+                                {% csrf_token %}
+                                <button type="submit"
+                                    class="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Sign
+                                    out</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% else %}
+                    <a href="{% url 'login' %}"
+                        class="hidden md:inline-block text-brand-charcoal dark:text-gray-200 hover:text-brand-cinnabar font-medium">Log
+                        in</a>
+                    <a href="{% url 'recipes:register' %}"
+                        class="hidden md:inline-block bg-brand-cinnabar text-white px-4 py-2 rounded-md font-medium hover:bg-red-600 transition-colors ml-2">Sign
+                        up</a>
+                    {% endif %}
+
+                    <!-- Mobile Menu Button -->
+                    <button id="mobile-menu-btn"
+                        class="md:hidden p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none ml-1">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Panel -->
+        <div id="mobile-menu"
+            class="hidden md:hidden bg-white dark:bg-brand-charcoal border-t border-gray-100 dark:border-gray-700 shadow-xl absolute w-full left-0 z-50">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="{% url 'recipes:recipe_list' %}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-brand-charcoal dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-brand-cinnabar mb-2 transition-colors">Home</a>
+                <div class="px-3 py-2 text-xs font-bold uppercase tracking-wider text-brand-cinnabar">Categories</div>
+                <div class="pl-4 space-y-1 border-l-2 border-brand-cinnabar/20 ml-3 mb-2">
+                    {% for category in default_categories %}
+                    <a href="{% url 'recipes:recipe_list' %}?category={{ category.name|urlencode }}"
+                        class="block px-3 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">{{
+                        category.name }}</a>
+                    {% endfor %}
+                </div>
+
+                <div class="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+
+                {% if user.is_authenticated %}
+                <div class="px-3 py-2 flex items-center gap-3 mb-2">
+                    <div
+                        class="h-8 w-8 rounded-full bg-brand-cinnabar text-white flex items-center justify-center font-bold">
+                        {{ user.username|make_list|first|upper }}
+                    </div>
+                    <span class="text-brand-charcoal dark:text-gray-200 font-medium">{{ user.username }}</span>
+                </div>
+                <a href="{% url 'recipes:recipe_create' %}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-brand-cinnabar hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="fa-solid fa-plus mr-1"></i> Add Recipe
+                </a>
+                <a href="{% url 'recipes:dashboard' %}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Dashboard</a>
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                        class="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Sign
+                        out</button>
+                </form>
+                {% else %}
+                <a href="{% url 'login' %}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Log
+                    in</a>
+                <a href="{% url 'recipes:register' %}"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-brand-cinnabar hover:bg-gray-100 dark:hover:bg-gray-700">Sign
+                    up</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="max-w-7xl mx-auto px-4 w-full mt-4">
+        {% for message in messages %}
+        <div
+            class="p-4 rounded-md mb-4 {% if message.tags == 'success' %}bg-green-100 text-green-800 border border-green-200 dark:bg-green-900 dark:text-green-200{% elif message.tags == 'error' %}bg-red-100 text-red-800 border border-red-200 dark:bg-red-900 dark:text-red-200{% else %}bg-blue-100 text-blue-800 border border-blue-200{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="flex-grow">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-brand-charcoal py-8 mt-12 transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 dark:text-gray-400">
+            <p>&copy; {% now "Y" %} Digital Recipe Manager. Crafted with <i
+                    class="fa-solid fa-heart text-brand-cinnabar"></i></p>
+        </div>
+    </footer>
+
+    <!-- Dark Mode Script -->
+    <script>
+        var themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+        var themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            themeToggleLightIcon.classList.remove('hidden');
+            document.documentElement.classList.add('dark');
+        } else {
+            themeToggleDarkIcon.classList.remove('hidden');
+            document.documentElement.classList.remove('dark');
+        }
+
+        var themeToggleBtn = document.getElementById('theme-toggle');
+
+        themeToggleBtn.addEventListener('click', function () {
+            themeToggleDarkIcon.classList.toggle('hidden');
+            themeToggleLightIcon.classList.toggle('hidden');
+
+            if (localStorage.getItem('color-theme')) {
+                if (localStorage.getItem('color-theme') === 'light') {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('color-theme', 'dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('color-theme', 'light');
+                }
+            } else {
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('color-theme', 'light');
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('color-theme', 'dark');
+                }
+            }
+        });
+
+        // Mobile Menu Toggle
+        var mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        var mobileMenu = document.getElementById('mobile-menu');
+
+        if (mobileMenuBtn && mobileMenu) {
+            mobileMenuBtn.addEventListener('click', function () {
+                mobileMenu.classList.toggle('hidden');
+            });
+        }
+    </script>
+</body>
+
+</html>

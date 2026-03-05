@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="relative overflow-hidden text-white py-16 md:py-32 bg-cover bg-center shadow-inner"
+    style="background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.4)), url({% static 'images/hero_banner2.png' %});">
+    <div class="max-w-7xl mx-auto px-4 relative z-10 text-center flex flex-col items-center">
+        <h1 class="text-3xl md:text-5xl font-bold mb-4 leading-tight">Discover Your Next Favorite Meal</h1>
+        <p class="text-lg md:text-xl max-w-2xl mx-auto mb-8 text-brand-cream px-2">Explore thousands of recipes shared
+            by food lovers
+            around the world.</p>
+
+        <form action="{% url 'recipes:recipe_list' %}" method="GET"
+            class="max-w-2xl mx-auto flex flex-col sm:flex-row gap-2">
+            <div class="relative flex-grow">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fa-solid fa-search text-gray-400"></i>
+                </div>
+                <input type="text" name="q" placeholder="Search for recipes..." value="{{ request.GET.q }}"
+                    class="block w-full pl-10 pr-3 py-3 border border-transparent rounded-md leading-5 bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white">
+            </div>
+
+            <select name="category"
+                class="block w-full sm:w-auto py-3 pl-3 pr-10 border border-transparent bg-white text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                {% if request.GET.category == cat.name %}
+                <option value="{{ cat.name }}" selected>{{ cat.name }}</option>
+                {% else %}
+                <option value="{{ cat.name }}">{{ cat.name }}</option>
+                {% endif %}
+                {% endfor %}
+            </select>
+
+            <button type="submit"
+                class="bg-brand-charcoal hover:bg-gray-800 text-white font-medium py-3 px-6 rounded-md transition-colors shadow-md">
+                Find Recipes
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Featured Recipes Grid -->
+<div class="max-w-7xl mx-auto px-4 py-12">
+    <div class="flex justify-between items-center mb-8">
+        <h2 class="text-3xl font-bold text-brand-charcoal dark:text-gray-100">Featured Recipes</h2>
+        {% if request.GET.q or request.GET.category %}
+        <a href="{% url 'recipes:recipe_list' %}" class="text-brand-cinnabar hover:underline">Clear Filters</a>
+        {% endif %}
+    </div>
+
+    {% if recipes %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        {% for recipe in recipes %}
+        <div
+            class="recipe-card glassmorphism rounded-xl overflow-hidden flex flex-col h-full bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
+            <div class="relative h-48 w-full bg-gray-200 dark:bg-gray-700">
+                {% if recipe.image %}
+                <img src="{{ recipe.image.url }}" alt="{{ recipe.title }}" class="w-full h-full object-cover">
+                {% else %}
+                <div class="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                    <i class="fa-solid fa-camera text-4xl mb-2"></i>
+                    <span>No Image Available</span>
+                </div>
+                {% endif %}
+                <div class="absolute top-2 right-2 flex gap-2">
+                    {% if recipe.category %}
+                    <span class="bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded">
+                        {{ recipe.category.name }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="p-5 flex-grow flex flex-col">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="text-xl font-bold text-gray-900 dark:text-white line-clamp-1">
+                        <a href="{% url 'recipes:recipe_detail' recipe.pk %}"
+                            class="hover:text-brand-cinnabar transition-colors">
+                            {{ recipe.title }}
+                        </a>
+                    </h3>
+                </div>
+
+                <p class="text-gray-600 dark:text-gray-300 text-sm line-clamp-2 mb-4 flex-grow">{{ recipe.description }}
+                </p>
+
+                <div
+                    class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mt-auto pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <div class="flex items-center gap-1">
+                        <i class="fa-regular fa-clock"></i> {{ recipe.cook_time }} mins
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <i class="fa-regular fa-user"></i> {{ recipe.author.username }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-16 bg-white dark:bg-gray-800 rounded-xl glassmorphism">
+        <i class="fa-solid fa-magnifying-glass text-4xl text-gray-400 mb-4"></i>
+        <h3 class="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">No recipes found</h3>
+        <p class="text-gray-500 dark:text-gray-400">Try adjusting your search criteria or browse our categories.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
